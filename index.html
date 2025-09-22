@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fitness Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            color: #1f2937;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <!-- Main Container -->
+    <div class="w-full max-w-2xl bg-white rounded-2xl shadow-2xl p-6 md:p-10 flex flex-col items-center">
+        <h1 class="text-3xl md:text-4xl font-extrabold text-center mb-6 text-gray-800">Fitness Tracker</h1>
+        
+        <!-- Dashboard Section -->
+        <div class="w-full flex justify-around items-center bg-gray-100 rounded-xl p-4 md:p-6 mb-8 shadow-inner">
+            <div class="text-center">
+                <p class="text-2xl md:text-3xl font-bold text-green-600" id="totalCalories">0</p>
+                <p class="text-gray-500 text-sm md:text-base">Calories Burned</p>
+            </div>
+            <div class="h-16 w-px bg-gray-300"></div>
+            <div class="text-center">
+                <p class="text-2xl md:text-3xl font-bold text-blue-600" id="totalWorkouts">0</p>
+                <p class="text-gray-500 text-sm md:text-base">Workouts Logged</p>
+            </div>
+        </div>
+
+        <!-- Log Activity Section -->
+        <div class="w-full bg-blue-50 rounded-xl p-6 mb-8 shadow-lg">
+            <h2 class="text-xl md:text-2xl font-semibold mb-4 text-blue-800">Log a New Activity</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <select id="activitySelect" class="p-3 rounded-lg border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300 text-lg">
+                    <option value="" disabled selected>Select activity...</option>
+                    <option value="Running">Running</option>
+                    <option value="Cycling">Cycling</option>
+                    <option value="Swimming">Swimming</option>
+                    <option value="Walking">Walking</option>
+                    <option value="Lifting">Lifting</option>
+                </select>
+                <input type="number" id="durationInput" placeholder="Duration (minutes)" class="p-3 rounded-lg border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300 text-lg">
+                <input type="number" id="caloriesInput" placeholder="Calories burned" class="p-3 rounded-lg border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300 text-lg">
+            </div>
+            <button id="logBtn" class="w-full mt-6 bg-blue-600 text-white p-3 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 transform hover:scale-105 font-semibold text-lg">
+                Log Activity
+            </button>
+        </div>
+
+        <!-- Activity History -->
+        <div class="w-full">
+            <h2 class="text-xl md:text-2xl font-semibold mb-4 text-gray-800">Activity History</h2>
+            <ul id="activityHistory" class="space-y-4">
+                <!-- Activity items will be dynamically added here -->
+            </ul>
+            <p id="noActivities" class="text-center text-gray-500 italic mt-8 text-sm md:text-base">No activities logged yet.</p>
+        </div>
+    </div>
+
+    <!-- Message Modal -->
+    <div id="messageModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg p-6 shadow-xl max-w-sm w-full text-center">
+            <p id="modalText" class="text-lg font-semibold text-gray-800 mb-4"></p>
+            <button id="closeModalBtn" class="bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition duration-300">OK</button>
+        </div>
+    </div>
+    
+    <script>
+        const activitySelect = document.getElementById('activitySelect');
+        const durationInput = document.getElementById('durationInput');
+        const caloriesInput = document.getElementById('caloriesInput');
+        const logBtn = document.getElementById('logBtn');
+        const totalCaloriesEl = document.getElementById('totalCalories');
+        const totalWorkoutsEl = document.getElementById('totalWorkouts');
+        const activityHistory = document.getElementById('activityHistory');
+        const noActivitiesMsg = document.getElementById('noActivities');
+        const messageModal = document.getElementById('messageModal');
+        const modalText = document.getElementById('modalText');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+
+        let totalCalories = 0;
+        let totalWorkouts = 0;
+
+        // Function to show a custom modal
+        function showModal(message) {
+            modalText.textContent = message;
+            messageModal.classList.remove('hidden');
+        }
+
+        closeModalBtn.addEventListener('click', () => {
+            messageModal.classList.add('hidden');
+        });
+
+        // Function to update the dashboard
+        function updateDashboard() {
+            totalCaloriesEl.textContent = totalCalories;
+            totalWorkoutsEl.textContent = totalWorkouts;
+            if (totalWorkouts > 0) {
+                noActivitiesMsg.classList.add('hidden');
+            } else {
+                noActivitiesMsg.classList.remove('hidden');
+            }
+        }
+
+        // Function to add a new activity to the history
+        function addActivity(activity, duration, calories) {
+            const listItem = document.createElement('li');
+            listItem.className = 'flex items-center justify-between bg-gray-100 p-4 rounded-lg shadow-md transition duration-300 transform hover:scale-[1.01]';
+            listItem.innerHTML = `
+                <div class="flex items-center space-x-4">
+                    <i class="fas fa-running text-lg text-blue-500"></i>
+                    <p class="text-base md:text-lg text-gray-700">
+                        <span class="font-semibold">${activity}</span>: ${duration} min / ${calories} cal
+                    </p>
+                </div>
+                <button class="delete-btn text-red-500 hover:text-red-700 transition duration-300 transform hover:scale-110">
+                    <i class="fas fa-trash-alt text-xl"></i>
+                </button>
+            `;
+            
+            activityHistory.appendChild(listItem);
+        }
+
+        // Event listener for the Log Activity button
+        logBtn.addEventListener('click', () => {
+            const activity = activitySelect.value;
+            const duration = parseInt(durationInput.value);
+            const calories = parseInt(caloriesInput.value);
+
+            if (!activity || isNaN(duration) || isNaN(calories) || duration <= 0 || calories <= 0) {
+                showModal("Please fill out all fields with valid numbers.");
+                return;
+            }
+
+            // Update state
+            totalCalories += calories;
+            totalWorkouts++;
+
+            // Update UI
+            updateDashboard();
+            addActivity(activity, duration, calories);
+
+            // Clear inputs
+            activitySelect.value = "";
+            durationInput.value = "";
+            caloriesInput.value = "";
+        });
+
+        // Event listener to delete an activity
+        activityHistory.addEventListener('click', (e) => {
+            if (e.target.closest('.delete-btn')) {
+                const item = e.target.closest('li');
+                const textContent = item.querySelector('p').textContent;
+                const caloriesStr = textContent.match(/(\d+)\s+cal/);
+                
+                if (caloriesStr && caloriesStr[1]) {
+                    const caloriesToRemove = parseInt(caloriesStr[1]);
+                    totalCalories -= caloriesToRemove;
+                    totalWorkouts--;
+                    updateDashboard();
+                }
+
+                item.remove();
+            }
+        });
+
+        // Initial dashboard update
+        updateDashboard();
+    </script>
+</body>
+</html>
